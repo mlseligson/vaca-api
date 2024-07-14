@@ -1,7 +1,7 @@
 import pg from "pg";
 import db from "./secrets/db-credentials.js";
 
-const pool = new pg.Pool({
+export const pool = new pg.Pool({
   host: 'localhost',
   database: db.database,
   user: db.user,
@@ -14,4 +14,7 @@ pool.on('error', (err, client) => {
   process.exit(-1);
 });
 
-export default pool;
+export async function connectToPool(req, res, next) {
+  req.client = await pool.connect();
+  next();
+};
