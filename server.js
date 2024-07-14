@@ -1,8 +1,10 @@
 import express, { Router } from 'express'
 import router from './api/router.js'
+import logger from 'morgan';
 
 let app = express();
 
+app.use(logger('tiny'));
 app.use(express.json());
 
 app.use(router);
