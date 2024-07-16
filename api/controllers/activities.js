@@ -40,23 +40,28 @@ async function createActivity(req, res, next) {
   }
 }
 
-// Get a specific activity by ID badabing
-async function getActivity(req, res) {
-  const activityId = req.params.id;
-  
-  const activity = {};
-  res.json(activity);
+
+async function getActivity(req, res, next) {
+  try {
+    const activity = await req.client.query('SELECT * FROM activities WHERE id=$1', [req.client.id]);
+
+    res.json(activity.rows[0]);
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
+  }
 }
 
 async function updateActivity(req, res) {
   const activityId = req.params.id;
   const updatedActivity = req.body; 
-  // Add code to update the activity in your database
-  res.json(updatedActivity); // Respond with the updated activity
+ 
+  res.json(updatedActivity);
 }
 
 async function deleteActivity(req, res) {
   const activityId = req.params.id;
-  // Add code to delete the activity from your database
-  res.status(204).send(); // R
-};
+  
+  res.status(204).send();
+}
