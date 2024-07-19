@@ -13,8 +13,10 @@ const verifyPassword = (password, salt, hash) => hash == md5(salt + password);
 
 const authRouter = Router();
 
+authRouter.get('/users', connectToPool, getUsers);
 authRouter.post('/register', connectToPool, register);
 authRouter.post('/login', login);
+
 
 export default authRouter;
 
@@ -93,7 +95,22 @@ function login(req, res, next) {
     } else {
       next({error: 'User not found', info});
     }
-  });
+  })(req, res, next);
+}
+
+async function getUsers(req, res, next) {
+  try {
+    const users = await req.client.query('SELECT * FROM users');
+
+    if (!users.rowCount)
+      throw new Error({status: 404});
+
+    res.json(users.rows);
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
+  }
 }
 
 export const jwtParse = expressjwt({
