@@ -43,7 +43,10 @@ async function createActivity(req, res, next) {
 
 async function getActivity(req, res, next) {
   try {
-    const activity = await req.client.query('SELECT * FROM activities WHERE id=$1', [req.client.id]);
+    const activity = await req.client.query('SELECT * FROM activities WHERE id=$1', [req.params.id]);
+
+    if (!activity.rowCount)
+      throw new Error({status: 404});
 
     res.json(activity.rows[0]);
   } catch(err) {
@@ -53,15 +56,37 @@ async function getActivity(req, res, next) {
   }
 }
 
-async function updateActivity(req, res) {
-  const activityId = req.params.id;
-  const updatedActivity = req.body; 
- 
-  res.json(updatedActivity);
+async function updateActivity(req, res, next) {
+  try {
+    const activity = await req.client.query({
+      text: `UPDATE activities SET
+              name = updateIfChanged($1, name),
+              description = updateIfChanged($2, description),
+              location = updateIfChanged($3, location),
+              trip_id = updateIfChanged($4, trip_id)
+            WHERE id = $5 RETURNING *;`,
+      values: [req.body.name, req.body.description, req.body.location, req.body.trip_id, req.params.id]
+    });
+
+    if (!activity.rowCount)
+      throw new Error({status: 404});
+
+    res.status(202).json(activity.rows[0]);
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
+  }
 }
 
-async function deleteActivity(req, res) {
-  const activityId = req.params.id;
-  
-  res.status(204).send();
+async function deleteActivity(req, res, next) {
+  try {
+    const activity = await req.client.query('DELETE FROM activities WHERE id=$1', [req.params.id]);
+
+    res.status(204).send();
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
+  }
 }

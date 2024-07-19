@@ -14,69 +14,79 @@ tripsRouter.delete('/:id', deleteTrip);
 export default tripsRouter;
 
 async function indexTrips(req, res) {
-  const trips = await req.client.query('SELECT * FROM trips');
+  const trips = await req.client.query('SELECT * FROM trips ORDER BY id ASC');
 
   req.client.release();
   res.json(trips.rows);
 }
 
-async function createTrip(req, res) {
-  const trip = await req.client.query({
-    text: 'INSERT INTO trips (name, destination, cost) VALUES ($1, $2, $3) RETURNING *',
-    values: [req.body.name, req.body.destination, req.body.cost]
-  });
+async function createTrip(req, res, next) {
+  try {
+    const trip = await req.client.query({
+      text: 'INSERT INTO trips (name, destination, cost, user_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      values: [req.body.name, req.body.destination, req.body.cost, req.body.user_id]
+    });
 
-  req.client.release();
-  
-  if (trip.rowCount)
+    if (!trip.rowCount)
+      throw new Error({status: 404});
+
     res.status(201).json(trip.rows[0]);
-  else {
-    res.status(500).send();
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
   }
 }
 
-async function getTrip(req, res) {
-  const trip = await req.client.query({
-    text: 'SELECT * FROM trips WHERE id=($1)',
-    values: [req.params.id]
-  });
+async function getTrip(req, res, next) {
+  try {
+    const trip = await req.client.query({
+      text: 'SELECT * FROM trips WHERE id=($1)',
+      values: [req.params.id]
+    });
 
-  req.client.release();
+    if (!trip.rowCount)
+      throw new Error({status: 404});
 
-  if (trip.rowCount) {
-    res.json(trip.rows[0]);
-  } else {
-    res.status(404).send();
+    res.json(trip);
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
   }
 }
 
-async function updateTrip(req, res) {
-  const trip = await req.client.query({
-    text: `UPDATE trips SET
-            name = updateIfChanged($1, name),
-            destination = updateIfChanged($2, destination),
-            cost = updateIfChanged($3, cost)
-          WHERE id = $4 RETURNING *;`,
-    values: [req.body.name, req.body.destination, req.body.cost, req.params.id]
-  });
+async function updateTrip(req, res, next) {
+  try {
+    const trip = await req.client.query({
+      text: `UPDATE trips SET
+              name = updateIfChanged($1, name),
+              destination = updateIfChanged($2, destination),
+              cost = updateIfChanged($3, cost)
+            WHERE id = $4 RETURNING *;`,
+      values: [req.body.name, req.body.destination, req.body.cost, req.params.id]
+    });
 
-  req.client.release();
+    if (!trip.rowCount)
+      throw new Error({status: 404});
 
-  if (trip.rowCount) {
-    res.json(trip.rows[0]);
-  } else {
-    res.status(404).send();
+    res.status(202).json(trip);
+
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
   }
 }
 
-async function deleteTrip(req, res) {
-  const trip = await req.client.query('DELETE FROM trips WHERE id=$1', [req.params.id]);
+async function deleteTrip(req, res, next) {
+  try {
+    const trip = await req.client.query('DELETE FROM trips WHERE id=$1', [req.params.id]);
 
-  req.client.release();
-
-  if (trip.rowCount) {
     res.status(204).send();
-  } else {
-    res.status(404).send();
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
   }
 }
