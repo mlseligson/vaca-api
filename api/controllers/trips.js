@@ -48,7 +48,7 @@ async function getTrip(req, res, next) {
     if (!trip.rowCount)
       throw new Error({status: 404});
 
-    res.json(trip);
+    res.json(trip.rows[0]);
   } catch(err) {
     next(err);
   } finally {
