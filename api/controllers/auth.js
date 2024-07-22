@@ -31,7 +31,7 @@ export const init = () => {
         values: [username]
       });
 
-      if (rowCount == 1) {
+      if (users.rowCount == 1) {
         const user = users.rows[0];
         const {salt, hash} = user;
 
@@ -89,7 +89,7 @@ function login(req, res, next) {
 
     if (user) {
       const expiry = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
-      const token = generateJwt(user.rows[0], expiry);
+      const token = generateJwt(user, expiry);
 
       res.json({ token });
     } else {
