@@ -22,9 +22,11 @@ async function indexTrips(req, res) {
 
 async function createTrip(req, res, next) {
   try {
+    const { name, destination, cost, image_url, start_time, end_time, user_id } = req.body;
+
     const trip = await req.client.query({
-      text: 'INSERT INTO trips (name, destination, cost, user_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      values: [req.body.name, req.body.destination, req.body.cost, req.body.user_id]
+      text: 'INSERT INTO trips (name, destination, cost, image_url, start_time, end_time user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      values: [name, destination, cost, image_url, start_time, end_time, user_id]
     });
 
     if (!trip.rowCount)
@@ -58,19 +60,25 @@ async function getTrip(req, res, next) {
 
 async function updateTrip(req, res, next) {
   try {
+    const { name, destination, cost, image_url, start_time, end_time, user_id } = req.body;
+
     const trip = await req.client.query({
       text: `UPDATE trips SET
               name = updateIfChanged($1, name),
               destination = updateIfChanged($2, destination),
-              cost = updateIfChanged($3, cost)
-            WHERE id = $4 RETURNING *;`,
-      values: [req.body.name, req.body.destination, req.body.cost, req.params.id]
+              cost = updateIfChanged($3, cost),
+              image_url = updateIfChanged($4, image_url),
+              start_time = updateIfChanged($5, start_time),
+              end_time = updateIfChanged($6, end_time),
+              user_id = updateIfChanged($7, user_id)
+            WHERE id = $8 RETURNING *;`,
+      values: [name, destination, cost, image_url, start_time, end_time, user_id, req.params.id]
     });
 
     if (!trip.rowCount)
       throw new Error({status: 404});
 
-    res.status(202).json(trip);
+    res.status(202).json(trip.rows[0]);
 
   } catch(err) {
     next(err);
@@ -81,7 +89,7 @@ async function updateTrip(req, res, next) {
 
 async function deleteTrip(req, res, next) {
   try {
-    const trip = await req.client.query('DELETE FROM trips WHERE id=$1', [req.params.id]);
+    await req.client.query('DELETE FROM trips WHERE id=$1', [req.params.id]);
 
     res.status(204).send();
   } catch(err) {
