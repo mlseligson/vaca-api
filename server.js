@@ -11,11 +11,6 @@ app.use(express.json());
 
 app.use('/api', router);
 
-app.get('/', (req, res) => {
-  res.json({a: req.query.a})
-});
-
 app.listen(3000, () => {
   console.log("Listening on port 3000")
 });
-

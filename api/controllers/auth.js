@@ -24,18 +24,21 @@ export const init = () => {
   passport.use(new LocalStrategy(async (username, password, done) => {
     let client;
     try {
+      // Connect to PostgreSQL pool
       client = await pool.connect();
 
+      // Query users table of users
       const users = await client.query({
         text: 'SELECT * FROM users WHERE username=$1',
         values: [username]
       });
 
+      // Check to make sure there is only one user with the username queried
       if (users.rowCount == 1) {
         const user = users.rows[0];
-        const {salt, hash} = user;
 
-        if (verifyPassword(password, salt, hash)) {
+        // Verify password
+        if (verifyPassword(password, user.salt, user.hash)) {
           done(null, user);
         } else {
           done({error: 'Incorrect password'}, false);
