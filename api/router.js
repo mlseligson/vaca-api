@@ -4,7 +4,7 @@ import flights from './controllers/flights.js';
 import activities from './controllers/activities.js';
 
 import errorHandler from './error.js';
-import auth, { init as initPassport } from './controllers/auth.js';;
+import auth, { init as initPassport } from './controllers/auth.js';
 
 const router = Router();
 
