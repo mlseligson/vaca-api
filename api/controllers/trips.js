@@ -1,11 +1,12 @@
-import express from 'express';
+import express, { text } from 'express';
 import { pool, connectToPool } from '../db.js';
 
 const tripsRouter = express.Router();
 
 tripsRouter.use(connectToPool);
 
-tripsRouter.get('/', indexTrips);
+tripsRouter.get('/', indexAllTrips);
+tripsRouter.get('/user/:userId', indexTrips);
 tripsRouter.post('/', createTrip);
 tripsRouter.get('/:id', getTrip);
 tripsRouter.patch('/:id', updateTrip);
@@ -13,11 +14,29 @@ tripsRouter.delete('/:id', deleteTrip);
 
 export default tripsRouter;
 
-async function indexTrips(req, res) {
+async function indexAllTrips(req, res) {
   const trips = await req.client.query('SELECT * FROM trips ORDER BY id ASC');
 
   req.client.release();
   res.json(trips.rows);
+}
+
+async function indexTrips(req, res, next) {
+  try {
+    const trips = await req.client.query({
+      text: 'SELECT * FROM trips WHERE user_id=($1) ORDER BY id ASC',
+      values: [req.params.userId]
+    });
+  
+    if (!trips.rowCount)
+      throw new Error({status: 404});
+
+    res.json(trips.rows);
+  } catch (err) {
+    next(err);
+  } finally {
+    req.client.release();
+  }
 }
 
 async function createTrip(req, res, next) {
