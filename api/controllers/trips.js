@@ -108,9 +108,12 @@ async function updateTrip(req, res, next) {
 
 async function deleteTrip(req, res, next) {
   try {
-    await req.client.query('DELETE FROM trips WHERE id=$1', [req.params.id]);
+    const result = await req.client.query('DELETE FROM trips WHERE id=$1', [req.params.id]);
 
-    res.status(204).send();
+    if (!result.rowCount)
+      throw new Error({status: 404});
+
+    res.status(204).json({deleted: result.rowCount});
   } catch(err) {
     next(err);
   } finally {
