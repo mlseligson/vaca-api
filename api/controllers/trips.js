@@ -7,7 +7,7 @@ tripsRouter.use(connectToPool);
 
 tripsRouter.get('/', indexAllTrips);
 tripsRouter.get('/user/:userId', indexTrips);
-tripsRouter.post('/', createTrip);
+tripsRouter.post('/user/:userId', createTrip);
 tripsRouter.get('/:id', getTrip);
 tripsRouter.patch('/:id', updateTrip);
 tripsRouter.delete('/:id', deleteTrip);
@@ -41,11 +41,12 @@ async function indexTrips(req, res, next) {
 
 async function createTrip(req, res, next) {
   try {
-    const { name, destination, cost, image_url, start_time, end_time, user_id } = req.body;
+    const { name, destination, cost, image_url, start_time, end_time } = req.body;
+    const { userId } = req.params;
 
     const trip = await req.client.query({
-      text: 'INSERT INTO trips (name, destination, cost, image_url, start_time, end_time user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      values: [name, destination, cost, image_url, start_time, end_time, user_id]
+      text: 'INSERT INTO trips (name, destination, cost, image_url, start_time, end_time, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      values: [name, destination, cost, image_url, start_time, end_time, userId]
     });
 
     if (!trip.rowCount)
