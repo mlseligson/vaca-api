@@ -1,13 +1,14 @@
-import express, { text } from 'express';
-import { pool, connectToPool } from '../db.js';
+import express from 'express';
+import { connectToPool } from '../db.js';
+import { StatusError } from '../error.js';
 
 const tripsRouter = express.Router();
 
 tripsRouter.use(connectToPool);
 
-tripsRouter.get('/', indexAllTrips);
-tripsRouter.get('/user/:userId', indexTrips);
-tripsRouter.post('/user/:userId', createTrip);
+// tripsRouter.get('/', indexAllTrips);
+tripsRouter.get('/', indexTrips);
+tripsRouter.post('/', createTrip);
 tripsRouter.get('/:id', getTrip);
 tripsRouter.patch('/:id', updateTrip);
 tripsRouter.delete('/:id', deleteTrip);
@@ -23,14 +24,12 @@ async function indexAllTrips(req, res) {
 
 async function indexTrips(req, res, next) {
   try {
+    console.log('user: ' + req.auth.id)
     const trips = await req.client.query({
       text: 'SELECT * FROM trips WHERE user_id=($1) ORDER BY id ASC',
-      values: [req.params.userId]
+      values: [req.auth?.id]
     });
   
-    if (!trips.rowCount)
-      throw new Error({status: 404});
-
     res.json(trips.rows);
   } catch (err) {
     next(err);
@@ -42,11 +41,11 @@ async function indexTrips(req, res, next) {
 async function createTrip(req, res, next) {
   try {
     const { name, destination, cost, image_url, start_time, end_time } = req.body;
-    const { userId } = req.params;
+    const { id } = req.auth;
 
     const trip = await req.client.query({
       text: 'INSERT INTO trips (name, destination, cost, image_url, start_time, end_time, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      values: [name, destination, cost, image_url, start_time, end_time, userId]
+      values: [name, destination, cost, image_url, start_time, end_time, id]
     });
 
     if (!trip.rowCount)

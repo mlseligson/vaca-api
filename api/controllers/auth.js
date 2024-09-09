@@ -59,7 +59,9 @@ function generateJwt(user, expiry) {
     id: user.id,
     username: user.username,
     exp: expiry.getTime() / 1000 
-  }, jwtSecret);
+  }, jwtSecret, {
+    algorithm: 'HS256'
+  });
 }
 
 async function register(req, res, next) {
@@ -118,6 +120,5 @@ async function getUsers(req, res, next) {
 
 export const jwtParse = expressjwt({
   secret: jwtSecret,
-  userProperty: 'payload',
-  algorithms: ['sha-1', 'RS256', 'HS256']
+  algorithms: ['HS256']
 });
