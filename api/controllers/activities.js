@@ -61,10 +61,11 @@ async function createMultipleActivities(req, res, next) {
   try {
     const { activities } = req.body;
     const { tripId: trip_id } = req.params;
+    const list = JSON.stringify(activities.map(name => ({name, trip_id})));
 
     const newActivities = await req.client.query({
-      text: 'INSERT INTO activities (name, trip_id) SELECT name, trip_id FROM jsonb_to_recordset($1::jsonb) AS t (name text, trip_id integer)',
-      values: JSON.stringify(activities.map(name => {name, trip_id}))
+      text: 'INSERT INTO activities (name, trip_id) SELECT * FROM jsonb_to_recordset($1::jsonb) AS x(name text, trip_id int) RETURNING *',
+      values: [list]
     });
 
     if (!newActivities.rowCount)
