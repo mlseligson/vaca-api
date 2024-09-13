@@ -1,5 +1,6 @@
 import express, { text } from 'express'
 import { connectToPool } from '../db.js';
+import { StatusError } from '../error.js';
 
 const activitiesRouter = express.Router();
 
@@ -33,7 +34,7 @@ function createActivity(req, res, next) {
   const handler = (req.body.bulk) ?
     createMultipleActivities : createSingleActivity;
 
-  handler.call(req, res, next);
+  handler.call(this, req, res, next);
 }
 
 async function createSingleActivity(req, res, next) {
@@ -47,7 +48,7 @@ async function createSingleActivity(req, res, next) {
     });
 
     if (!newActivity.rowCount)
-      throw new Error({status: 404});
+      throw new StatusError({status: 404});
 
     res.status(201).json(newActivity.rows[0]);
   } catch(err) {
@@ -69,7 +70,7 @@ async function createMultipleActivities(req, res, next) {
     });
 
     if (!newActivities.rowCount)
-      throw new Error({status: 404});
+      throw new StatusError({status: 404});
       
     res.status(201).json({inserted: newActivities.rowCount});
   } catch(err) {
@@ -85,7 +86,7 @@ async function getActivity(req, res, next) {
     const activity = await req.client.query('SELECT * FROM activities WHERE id=$1', [req.params.id]);
 
     if (!activity.rowCount)
-      throw new Error({status: 404});
+      throw new StatusError({status: 404});
 
     res.json(activity.rows[0]);
   } catch(err) {
@@ -113,7 +114,7 @@ async function updateActivity(req, res, next) {
     });
 
     if (!activity.rowCount)
-      throw new Error({status: 404});
+      throw new StatusError({status: 404});
 
     res.status(202).json(activity.rows[0]);
   } catch(err) {
