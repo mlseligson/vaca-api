@@ -1,4 +1,4 @@
-import express, { text } from 'express'
+import express from 'express'
 import { connectToPool } from '../db.js';
 import { StatusError } from '../error.js';
 
@@ -6,18 +6,21 @@ const activitiesRouter = express.Router();
 
 activitiesRouter.use(connectToPool);
 
-activitiesRouter.get('/', indexActivities);
+activitiesRouter.get('/trip/:tripId', indexActivities);
 activitiesRouter.post('/trip/:tripId', createActivity);
 activitiesRouter.get('/:id', getActivity);
 activitiesRouter.patch('/:id', updateActivity);
 activitiesRouter.delete('/:id', deleteActivity);
 
-export default activitiesRouter; 
+export default activitiesRouter;
 
-
+// NEEDS FINISHED
 async function indexActivities(req, res, next) {
   try {
-    const activities = await req.client.query('SELECT * FROM activities');
+    const activities = await req.client.query({
+      text: 'SELECT * FROM activities WHERE trip_id=$1 ORDER BY $2 $3',
+      values: [req.params.tripId]
+    });
 
     if (!activities.rowCount)
       throw new Error({status: 404});
