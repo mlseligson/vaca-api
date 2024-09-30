@@ -17,9 +17,20 @@ export default activitiesRouter;
 // NEEDS FINISHED
 async function indexActivities(req, res, next) {
   try {
+    const { tripId } = req.params;
+    const { filter, sort, order, pageIndex, pageSize } = req.query;
+
     const activities = await req.client.query({
-      text: 'SELECT * FROM activities WHERE trip_id=$1 ORDER BY $2 $3',
-      values: [req.params.tripId]
+      text: `SELECT * FROM activities
+              WHERE trip_id = $1
+              AND to_tsvector('english',
+                  COALESCE(name, '') || ' ' ||
+                  COALESCE(description, '') || ' ' ||
+                  COALESCE(location, '')
+                ) @@ to_tsquery('english', $2)
+              ORDER BY ${sort} ${order}
+              LIMIT $3::int OFFSET $4::int`,
+      values: [tripId, filter, pageSize, pageIndex * pageSize]
     });
 
     if (!activities.rowCount)
