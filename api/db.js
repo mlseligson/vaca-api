@@ -1,6 +1,8 @@
 import pg from "pg";
 import db from "./secrets/db-credentials.js";
 
+types.setTypeParser(types.builtins.INT8, parseInt);
+
 export const pool = new pg.Pool({
   host: 'localhost',
   database: db.database,
