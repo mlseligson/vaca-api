@@ -6,7 +6,6 @@ const tripsRouter = express.Router();
 
 tripsRouter.use(connectToPool);
 
-// tripsRouter.get('/', indexAllTrips);
 tripsRouter.get('/', indexTrips);
 tripsRouter.post('/', createTrip);
 tripsRouter.get('/:id', getTrip);
@@ -14,13 +13,6 @@ tripsRouter.patch('/:id', updateTrip);
 tripsRouter.delete('/:id', deleteTrip);
 
 export default tripsRouter;
-
-async function indexAllTrips(req, res) {
-  const trips = await req.client.query('SELECT * FROM trips ORDER BY id ASC');
-
-  req.client.release();
-  res.json(trips.rows);
-}
 
 async function indexTrips(req, res, next) {
   try {
