@@ -18,23 +18,42 @@ export default activitiesRouter;
 async function indexActivities(req, res, next) {
   try {
     const { tripId } = req.params;
-    const { filter, sort, order, pageIndex, pageSize } = req.query;
+    const { filter, sort, order, page, limit } = req.query;
 
     const activities = await req.client.query({
-      text: `SELECT * FROM activities
-              WHERE trip_id = $1
-              AND to_tsvector('english',
+      text:  `SELECT * FROM activities
+              WHERE trip_id = $1 AND
+                (
                   COALESCE(name, '') || ' ' ||
                   COALESCE(description, '') || ' ' ||
                   COALESCE(location, '')
-                ) @@ to_tsquery('english', $2)
+                  ILIKE '%' || $2 || '%'
+                OR
+                  COALESCE(TRIM($2), '') = ''
+                )
               ORDER BY ${sort} ${order}
-              LIMIT $3::int OFFSET $4::int`,
-      values: [tripId, filter, pageSize, pageIndex * pageSize]
+              LIMIT $3 OFFSET $4`,
+      values: [tripId, filter, limit, page * limit]
     });
 
+    // FULL TEXT SEARCH (DOES NOT "FUZZY" SEARCH)
+    //
+    // const activities = await req.client.query({
+    //   text: `SELECT * FROM activities
+    //           WHERE trip_id = $1
+    //           AND to_tsvector('english',
+    //               COALESCE(name, '') || ' ' ||
+    //               COALESCE(description, '') || ' ' ||
+    //               COALESCE(location, '')
+    //             ) @@ to_tsquery('english', $2)
+    //           OR COALESCE(TRIM($2), '') = ''
+    //           ORDER BY ${sort} ${order}
+    //           LIMIT $3 OFFSET $4`,
+    //   values: [tripId, filter, limit, page * limit]
+    // });
+
     if (!activities.rowCount)
-      throw new Error({status: 404});
+      throw new StatusError({status: 404});
 
     res.json(activities.rows);
   } catch(err) {
