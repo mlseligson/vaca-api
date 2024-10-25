@@ -1,3 +1,4 @@
 api/secrets/*
 node_modules
 package-lock.json
+images/*
