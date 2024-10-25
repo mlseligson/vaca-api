@@ -1,15 +1,25 @@
 import express from 'express';
 import { connectToPool } from '../db.js';
 import { StatusError } from '../error.js';
+import multer from 'multer';
+import mime from 'mime-types';
+import { nanoid } from 'nanoid';
 
 const tripsRouter = express.Router();
+
+const storage = multer.diskStorage({
+  destination: './images',
+  filename: (req, file, cb) => {
+    cb(null, `${nanoid()}.${mime.extension(file.mimetype)}`);
+  }
+});
 
 tripsRouter.use(connectToPool);
 
 tripsRouter.get('/', indexTrips);
 tripsRouter.post('/', createTrip);
 tripsRouter.get('/:id', getTrip);
-tripsRouter.patch('/:id', updateTrip);
+tripsRouter.patch('/:id', multer({storage}).single('image'), updateTrip);
 tripsRouter.delete('/:id', deleteTrip);
 
 export default tripsRouter;
@@ -71,7 +81,8 @@ async function getTrip(req, res, next) {
 
 async function updateTrip(req, res, next) {
   try {
-    const { name, destination, cost, image_url, start_time, end_time, user_id } = req.body;
+    const { name, destination, cost, start_time, end_time, user_id } = req.body;
+    const image_url = `/${req.file.filename}`;
 
     const trip = await req.client.query({
       text: `UPDATE trips SET
