@@ -10,7 +10,7 @@ const tripsRouter = express.Router();
 const storage = multer.diskStorage({
   destination: './images',
   filename: (req, file, cb) => {
-    cb(null, `${nanoid()}.${mime.extension(file.mimetype)}`);
+    cb(null, `${req.body.id}.${mime.extension(file.mimetype)}`);
   }
 });
 
@@ -81,8 +81,8 @@ async function getTrip(req, res, next) {
 
 async function updateTrip(req, res, next) {
   try {
-    const { name, destination, cost, start_time, end_time, user_id } = req.body;
-    const image_url = `/${req.file.filename}`;
+    let { name, destination, cost, image_url, start_time, end_time, user_id } = req.body;
+    image_url = req.file ? req.file.filename : null;
 
     const trip = await req.client.query({
       text: `UPDATE trips SET

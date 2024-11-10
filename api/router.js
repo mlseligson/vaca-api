@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { static as _static, Router } from 'express';
+import path from 'path';
 import trips from './controllers/trips.js';
 import flights from './controllers/flights.js';
 import activities from './controllers/activities.js';
@@ -14,6 +15,7 @@ router.use('/trips', jwtParse, trips);
 router.use('/flights', jwtParse, flights);
 router.use('/activities', jwtParse, activities);
 router.use('/auth', auth);
+router.use('/images', _static(path.join(path.resolve(), 'images')));
 
 router.use(errorHandler);
 
