@@ -1,16 +1,21 @@
 import express from 'express'
 import { connectToPool } from '../db.js';
 import { StatusError } from '../error.js';
+import { executeQuery, activitiesGenerationConfig } from './gemini.js';
 
 const activitiesRouter = express.Router();
 
 activitiesRouter.use(connectToPool);
+
+activitiesRouter.get('/suggest', suggestActivities);
 
 activitiesRouter.get('/trip/:tripId', indexActivities);
 activitiesRouter.post('/trip/:tripId', createActivity);
 activitiesRouter.get('/:id', getActivity);
 activitiesRouter.patch('/:id', updateActivity);
 activitiesRouter.delete('/:id', deleteActivity);
+
+
 
 export default activitiesRouter;
 
@@ -162,6 +167,22 @@ async function deleteActivity(req, res, next) {
     await req.client.query('DELETE FROM activities WHERE id=$1', [req.params.id]);
 
     res.status(204).send();
+  } catch(err) {
+    next(err);
+  } finally {
+    req.client.release();
+  }
+}
+
+async function suggestActivities(req, res, next) {
+  try {
+    const query = `
+    Location of Trip: ${req.query.location}
+    Date Range: ${req.query.dateRange}
+    Example of Fun Activity: ${req.query.example})`;
+    const response = await executeQuery(activitiesGenerationConfig, query);
+
+    res.status(200).json(JSON.parse(response));
   } catch(err) {
     next(err);
   } finally {
