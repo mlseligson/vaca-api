@@ -4,7 +4,16 @@ import apiKeys from "../secrets/api-keys.js";
 const genAI = new GoogleGenerativeAI(apiKeys['geminiApi']);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-1.5-pro",
+  systemInstruction: "Be laid back but informative. Talk like a canadian.",
+  // tools: [{
+  //   google_search_retrieval: {
+  //     dynamic_retrieval_config: {
+  //       mode: "MODE_DYNAMIC",
+  //       dynamic_threshold: 0.3,
+  //     },
+  //   },
+  // }],
 });
 
 export const activitiesGenerationConfig = {
@@ -16,7 +25,7 @@ export const activitiesGenerationConfig = {
   responseSchema: {
     type: "object",
     properties: {
-      activities: {
+      suggestions: {
         type: "array",
         items: {
           type: "object",
@@ -24,47 +33,53 @@ export const activitiesGenerationConfig = {
             category: {
               type: "string"
             },
-            description: {
+            title: {
               type: "string"
             },
-            title: {
+            description: {
               type: "string"
             },
             location: {
               type: "string"
             },
-            website: {
+            url: {
+              type: "string"
+            },
+            icon: {
               type: "string"
             }
           },
           required: [
             "category",
-            "description",
             "title",
+            "description",
             "location",
-            "website"
+            "icon"
           ]
         }
       },
       location: {
         type: "string"
       },
-      activityCount: {
-        type: "integer"
+      suggestionCount: {
+        type: "string"
       },
       dateRange: {
         type: "string"
       },
-      example: {
-        type: "string"
+      keywords: {
+        type: "array",
+        items: {
+          type: "string"
+        }
       }
     },
     required: [
-      "activities",
+      "suggestions",
       "location",
-      "activityCount",
+      "suggestionCount",
       "dateRange",
-      "example"
+      "keywords"
     ]
   },
 };
@@ -76,19 +91,17 @@ export async function executeQuery(generationConfig, query) {
       {
         role: "user",
         parts: [
-          {text:
-            `list creative suggestions for unique and specific activities during a trip or vacation.  Include a category, brief title, more detailed description, location, and website address.  If there is no matching website, provide a link to a google search page.
-            
-            Location of Trip: Denver
-            Date Range: 12/21/24 to 1/7/25
-            Example of Fun Activity: Music, Food, and Festival`
+          {
+            text: "You are my new personal vacation planner.  List 10 creative suggestions for unique and specific activities during the trip outlined below.  I will provide a location, date range, and a list of keywords.  Be sure to include a category, brief title, a more detailed description, location (an address if applicable).  Do not limit activities to the keywords. If the activity involves a company, also include their website URL. If there is no matching website, provide a link to a google search page instead.  Also categorize each suggestion as one of the google material symbols and include the icon name.\n            \n            Location: Denver\n            Date Range: 12/21/24 to 1/7/25\n            Keywords: Music, Food, Festival"
           },
         ],
       },
       {
         role: "model",
         parts: [
-          {text: "```json\n{\"activities\": [{\"activities\": [{\"category\": \"Music\", \"description\": \"Enjoy karaoke at one of Denver's many bars and clubs.  Many locations offer karaoke nights.\", \"location\": \"Various bars and clubs in Denver\", \"title\": \"Karaoke in Denver\", \"website\": \"https://www.google.com/search?q=karaoke+denver\"}, {\"category\": \"Music\", \"description\": \"Experience the vibrant Denver music scene with a live concert at the iconic Red Rocks Amphitheatre. Check their website for show schedules during your visit.  Note that some shows might be outdoors and cold in December/January.\", \"location\": \"Red Rocks Amphitheatre, Morrison, CO\", \"title\": \"Red Rocks Concert\", \"website\": \"https://www.redrocksonline.com/\"}, {\"category\": \"Food & Drink\", \"description\": \"Indulge in Denver's craft beer scene with a brewery tour and tasting at Great Divide Brewing Co. Sample a variety of their award-winning beers.\", \"location\": \"Great Divide Brewing Co., Denver, CO\", \"title\": \"Great Divide Brewery Tour\", \"website\": \"https://www.greatdivide.com/\"}, {\"category\": \"Outdoor Recreation\", \"description\": \"Go ice skating at downtown Denver's Skyline Park ice rink. Enjoy the festive atmosphere and stunning city views.\", \"location\": \"Skyline Park, Denver, CO\", \"title\": \"Ice Skating at Skyline Park\", \"website\": \"https://downtowndenver.com/events-activities/skyline-park/\"}, {\"category\": \"Arts & Culture\", \"description\": \"Visit the Denver Art Museum and explore diverse collections spanning various cultures and periods.  Check their website for special exhibitions during your stay.\", \"location\": \"Denver Art Museum, Denver, CO\", \"title\": \"Denver Art Museum\", \"website\": \"https://www.denverartmuseum.org/\"}, {\"category\": \"History\", \"description\": \"Explore the Molly Brown House Museum, learning about the life of the 'Unsinkable' Molly Brown and Denver's history during the Gold Rush era.\", \"location\": \"Molly Brown House Museum, Denver, CO\", \"title\": \"Molly Brown House Museum\", \"website\": \"https://mollybrown.org/\"}, {\"category\": \"Food & Drink\", \"description\": \"Enjoy a unique dining experience at a restaurant in Denver's RiNo Art District, known for its trendy eateries and vibrant street art.\", \"location\": \"RiNo Art District, Denver, CO\", \"title\": \"RiNo Art District Dining\", \"website\": \"https://rinoartdistrict.com/\"}, {\"category\": \"Outdoor Recreation\", \"description\": \"Go snowshoeing or cross-country skiing in the scenic Red Rocks Park. Check trail conditions and accessibility before you go.\", \"location\": \"Red Rocks Park, Morrison, CO\", \"title\": \"Snowshoeing/Cross-country Skiing in Red Rocks\", \"website\": \"https://www.redrocksonline.com/plan-your-visit/hiking-biking-and-more/\"}, {\"category\": \"Festivals & Events\", \"description\": \"Check local event listings for holiday markets, festivals, or concerts that may coincide with your travel dates. Denver often has festive events during the holiday season.\", \"location\": \"Various Locations in Denver\", \"title\": \"Holiday Events in Denver\", \"website\": \"https://www.denver.org/events/\"}, {\"category\": \"Shopping\", \"description\": \"Explore Larimer Square, a historic district with unique boutiques and shops offering everything from souvenirs to high-end fashion.\", \"location\": \"Larimer Square, Denver, CO\", \"title\": \"Shopping in Larimer Square\", \"website\": \"https://larimersquare.com/\"}, {\"category\": \"Sports & Recreation\", \"description\": \"Catch a Denver Nuggets basketball game at Ball Arena if your trip coincides with their schedule.  Check the schedule on their website\", \"location\": \"Ball Arena, Denver, CO\", \"title\": \"Denver Nuggets Game\", \"website\": \"https://www.nba.com/nuggets\"}, {\"category\": \"Science & Nature\", \"description\": \"Visit the Denver Botanic Gardens and enjoy the winter displays and indoor exhibits. The gardens' diverse plant collections provide visual appeal even in the winter months.\", \"location\": \"Denver Botanic Gardens, Denver, CO\", \"title\": \"Denver Botanic Gardens\", \"website\": \"https://www.botanicgardens.org/\"}, {\"category\": \"Unique Experience\", \"description\": \"Take a ghost tour in Denver's historic districts. Several companies offer spooky and fun walking tours exploring the city's haunted past.\", \"location\": \"Various Locations in Downtown Denver\", \"title\": \"Denver Ghost Tour\", \"website\": \"Search online for Denver ghost tours\"}], \"activityCount\": 12, \"dateRange\": \"12/21/24 to 1/7/25\", \"location\": \"Denver, CO\"}"}
+          {
+            text:"```json\n{\"dateRange\": \"12/21/24 to 1/7/25\", \"keywords\": [\"Music\", \"Food\", \"Festival\"], \"location\": \"Denver\", \"suggestionCount\": \"10\", \"suggestions\": [{\"category\": \"Music\", \"description\": \"Catch a show at Denver's iconic jazz club, featuring local and national artists.\", \"icon\": \"music_note\", \"location\": \"Dazzle Jazz Restaurant & Lounge, 1512 Curtis St, Denver, CO 80202\", \"title\": \"Live Jazz at Dazzle\", \"url\": \"https://www.dazzlejazz.com/\"}, {\"category\": \"Food\", \"description\": \"Experience a festive multi-course meal paired with craft beers at a popular Denver brewery.\", \"icon\": \"restaurant\", \"location\": \"Great Divide Brewing Co., 2201 Arapahoe St, Denver, CO 80205\", \"title\": \"Holiday Beer Dinner\", \"url\": \"https://www.greatdivide.com/\"}, {\"category\": \"Festival\", \"description\": \"Celebrate the holiday season with Denver's annual Parade of Lights, featuring illuminated floats and festive performances.\", \"icon\": \"celebration\", \"location\": \"Downtown Denver\", \"title\": \"9NEWS Parade of Lights\", \"url\": \"https://www.denverparadeoflights.com/\"}, {\"category\": \"Music\", \"description\": \"Enjoy a performance by the Colorado Symphony Orchestra, featuring holiday classics and other orchestral works.\", \"icon\": \"theater_comedy\", \"location\": \"Boettcher Concert Hall, 1000 14th St, Denver, CO 80202\", \"title\": \"Holiday Symphony Concert\", \"url\": \"https://coloradosymphony.org/\"}, {\"category\": \"Food\", \"description\": \"Explore Denver's vibrant culinary scene with a food tour of the historic Larimer Square district.\", \"icon\": \"local_dining\", \"location\": \"Larimer Square, Denver, CO 80202\", \"title\": \"Larimer Square Food Tour\", \"url\": \"https://www.larimersquare.com/\"}, {\"category\": \"Festival\", \"description\": \"Immerse yourself in the holiday spirit at the Denver Christkindl Market, featuring handcrafted gifts, traditional German food, and festive entertainment.\", \"icon\": \"festival\", \"location\": \"Civic Center Park, Denver, CO 80202\", \"title\": \"Denver Christkindl Market\", \"url\": \"https://www.denverchristkindlmarket.com/\"}, {\"category\": \"Music\", \"description\": \"Attend a concert by a popular indie rock band at the historic Ogden Theatre.\", \"icon\": \"music_note\", \"location\": \"Ogden Theatre, 935 E Colfax Ave, Denver, CO 80218\", \"title\": \"Indie Rock at the Ogden\", \"url\": \"https://www.ogdentheatre.com/\"}, {\"category\": \"Food\", \"description\": \"Savor the flavors of Colorado's craft breweries and distilleries at a tasting event featuring local producers.\", \"icon\": \"local_bar\", \"location\": \"Wings Over the Rockies Air & Space Museum, 7711 E Academy Blvd, Denver, CO 80230\", \"title\": \"Colorado Brewers' Festival\", \"url\": \"https://www.greatamericanbeerfestival.com/\"}, {\"category\": \"Festival\", \"description\": \"Ring in the New Year at Denver's annual New Year's Eve fireworks display, featuring two spectacular shows at 9 p.m. and midnight.\", \"icon\": \"fireworks\", \"location\": \"16th Street Mall, Denver, CO 80202\", \"title\": \"New Year's Eve Fireworks\", \"url\": \"https://www.denver.org/things-to-do/denver-holiday-guide/new-years-eve/\"}, {\"category\": \"Festival\", \"description\": \"Cheer on the Denver Nuggets as they face off another NBA team\", \"icon\": \"sports_basketball\", \"location\": \"Ball Arena, 1000 Chopper Cir, Denver, CO 80204\", \"title\": \"Denver Nuggets Game\", \"url\": \"https://www.nba.com/nuggets/\"} ]\n}\n```"
+          },
         ],
       },
     ],

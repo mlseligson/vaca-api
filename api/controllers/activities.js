@@ -176,13 +176,16 @@ async function deleteActivity(req, res, next) {
 
 async function suggestActivities(req, res, next) {
   try {
+    /** Retrive trip details (destination, start_time, end_time) from db */
     const trip = await req.client.query('SELECT * FROM trips WHERE id=$1', [req.query.tripId]);
     const { destination, start_time, end_time } = trip.rows[0];
 
     const query = `
     Location of Trip: ${destination}
-    Date Range: ${start_time}-${end_time}
-    Example of Fun Activity: ${req.query.example})`;
+    Date Range: ${start_time} - ${end_time}
+    Keywords: ${decodeURIComponent(req.query.keywords)}`;
+
+    /** Execute Gemini query */
     const response = await executeQuery(activitiesGenerationConfig, query);
 
     res.status(200).json(JSON.parse(response));
