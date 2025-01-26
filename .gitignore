@@ -1,3 +1,4 @@
 api/secrets/*
 node_modules
 images/*
+frontend
