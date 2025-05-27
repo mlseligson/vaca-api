@@ -3,7 +3,7 @@ import db from "./secrets/db-credentials.js";
 
 export const pool = new pg.Pool({
   // host: 'docker.for.mac.host.internal',
-  host: '127.0.0.1',
+  host: 'db',
   database: db.database,
   user: db.user,
   password: db.password,
